@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OGUMonitor</string>
+    <string name="notification_permission_denied_message">Bildirim izni verilmedi. Değişiklik bildirimleri gösterilemeyebilir.</string>
+    <string name="cookie_empty_message">Lütfen geçerli bir çerez dizisi girin.</string>
+    <string name="monitoring_started_message">İzleme başlatıldı.</string>
+    <string name="monitoring_stopped_message">İzleme durduruldu.</string>
+    <string name="status_started">Durum: İzleme başlatıldı</string>
+    <string name="status_stopped">Durum: İzleme duruyor</string>
+    <string name="status_idle">Durum: —</string>
+    <string name="status_running">Durum: Çalışıyor</string>
+    <string name="status_waiting">Durum: Beklemede</string>
+    <string name="status_failed">Durum: Hata oluştu</string>
+</resources>
