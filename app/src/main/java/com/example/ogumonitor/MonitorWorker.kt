@@ -8,6 +8,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -77,12 +80,12 @@ class MonitorWorker(
                     title = appContext.getString(R.string.app_name),
                     message = "Oturum geçersiz. Yeni cookie koy."
                 )
-                return@withContext Result.success()
+                return@withContext successWithReschedule(cookie)
             }
 
             val fragment = extractFragment(body)
             if (fragment.isEmpty()) {
-                return@withContext Result.success()
+                return@withContext successWithReschedule(cookie)
             }
 
             val newHash = computeHash(fragment)
@@ -90,7 +93,7 @@ class MonitorWorker(
 
             if (lastHash == null) {
                 prefs.edit().putString(PREF_LAST_HASH, newHash).apply()
-                return@withContext Result.success()
+                return@withContext successWithReschedule(cookie)
             }
 
             if (newHash != lastHash) {
@@ -101,8 +104,30 @@ class MonitorWorker(
                 )
             }
 
-            Result.success()
+            successWithReschedule(cookie)
         }
+    }
+
+    private fun successWithReschedule(cookie: String): Result {
+        scheduleNextRun(cookie)
+        return Result.success()
+    }
+
+    private fun scheduleNextRun(cookie: String) {
+        if (isStopped) return
+
+        val workManager = WorkManager.getInstance(appContext)
+        val nextRequest = OneTimeWorkRequestBuilder<MonitorWorker>()
+            .setInitialDelay(REPEAT_INTERVAL_MINUTES.toLong(), TimeUnit.MINUTES)
+            .setInputData(createInputData(cookie))
+            .addTag(WORK_TAG)
+            .build()
+
+        workManager.enqueueUniqueWork(
+            UNIQUE_PERIODIC_WORK_NAME,
+            ExistingWorkPolicy.REPLACE,
+            nextRequest
+        )
     }
 
     private fun extractFragment(html: String): String {
@@ -165,6 +190,7 @@ class MonitorWorker(
         private const val PREF_LAST_HASH = "last_hash"
         private const val NOTIFICATION_ID = 101
         private val LOGIN_KEYWORDS = listOf("giriş", "oturum", "login")
+        const val REPEAT_INTERVAL_MINUTES = 1
 
         fun createInputData(cookie: String): Data = Data.Builder()
             .putString(KEY_COOKIE, cookie)

@@ -12,9 +12,8 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
@@ -71,7 +70,8 @@ class MainActivity : AppCompatActivity() {
                 .apply()
             requestNotificationPermissionIfNeeded()
 
-            val periodicRequest = PeriodicWorkRequestBuilder<MonitorWorker>(15, TimeUnit.MINUTES)
+            val repeatingRequest = OneTimeWorkRequestBuilder<MonitorWorker>()
+                .setInitialDelay(MonitorWorker.REPEAT_INTERVAL_MINUTES.toLong(), TimeUnit.MINUTES)
                 .setInputData(MonitorWorker.createInputData(cookieText))
                 .addTag(MonitorWorker.WORK_TAG)
                 .build()
@@ -82,10 +82,10 @@ class MainActivity : AppCompatActivity() {
                 .addTag(MonitorWorker.WORK_TAG)
                 .build()
 
-            workManager.enqueueUniquePeriodicWork(
+            workManager.enqueueUniqueWork(
                 MonitorWorker.UNIQUE_PERIODIC_WORK_NAME,
-                ExistingPeriodicWorkPolicy.UPDATE,
-                periodicRequest
+                ExistingWorkPolicy.REPLACE,
+                repeatingRequest
             )
             workManager.enqueue(oneTimeRequest)
 
