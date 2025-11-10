@@ -14,4 +14,10 @@
     <string name="input_instructions">ASP.NET_SessionId ve obsKul kodlarını aşağıya girin. Başına etiket eklemeden sadece kodları yazmanız yeterlidir.</string>
     <string name="hint_asp">ASP.NET_SessionId kodu</string>
     <string name="hint_obs">obsKul kodu</string>
+    <string name="notification_session_invalid">Oturum geçersiz. Yeni cookie koy. Son kontrol: %1$s</string>
+    <string name="notification_table_missing">Sınav tablosu bulunamadı. Son kontrol: %1$s</string>
+    <string name="notification_initial_snapshot">İlk snapshot alındı. Son kontrol: %1$s</string>
+    <string name="notification_no_change">Değişiklik yok. Son kontrol: %1$s</string>
+    <string name="notification_results_changed_title">OGU: Sınav Sonuçları Değişti</string>
+    <string name="notification_results_changed_body">Sonuçlar değişmiş. Kontrol et. Son kontrol: %1$s</string>
 </resources>

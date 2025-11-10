@@ -18,6 +18,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jsoup.Jsoup
 import java.security.MessageDigest
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -78,13 +80,23 @@ class MonitorWorker(
             if (LOGIN_KEYWORDS.any { lowerBody.contains(it) }) {
                 sendNotification(
                     title = appContext.getString(R.string.app_name),
-                    message = "Oturum geçersiz. Yeni cookie koy."
+                    message = appContext.getString(
+                        R.string.notification_session_invalid,
+                        currentTimestamp()
+                    )
                 )
                 return@withContext successWithReschedule(cookie)
             }
 
             val fragment = extractFragment(body)
             if (fragment.isEmpty()) {
+                sendNotification(
+                    title = appContext.getString(R.string.app_name),
+                    message = appContext.getString(
+                        R.string.notification_table_missing,
+                        currentTimestamp()
+                    )
+                )
                 return@withContext successWithReschedule(cookie)
             }
 
@@ -93,14 +105,32 @@ class MonitorWorker(
 
             if (lastHash == null) {
                 prefs.edit().putString(PREF_LAST_HASH, newHash).apply()
+                sendNotification(
+                    title = appContext.getString(R.string.app_name),
+                    message = appContext.getString(
+                        R.string.notification_initial_snapshot,
+                        currentTimestamp()
+                    )
+                )
                 return@withContext successWithReschedule(cookie)
             }
 
             if (newHash != lastHash) {
                 prefs.edit().putString(PREF_LAST_HASH, newHash).apply()
                 sendNotification(
-                    title = "OGU: Sınav Sonuçları Değişti",
-                    message = "Sonuçlar değişmiş. Kontrol et."
+                    title = appContext.getString(R.string.notification_results_changed_title),
+                    message = appContext.getString(
+                        R.string.notification_results_changed_body,
+                        currentTimestamp()
+                    )
+                )
+            } else {
+                sendNotification(
+                    title = appContext.getString(R.string.app_name),
+                    message = appContext.getString(
+                        R.string.notification_no_change,
+                        currentTimestamp()
+                    )
                 )
             }
 
@@ -176,6 +206,11 @@ class MonitorWorker(
         if (hasPermission || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             manager.notify(NOTIFICATION_ID, builder.build())
         }
+    }
+
+    private fun currentTimestamp(): String {
+        val formatter = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+        return formatter.format(Date())
     }
 
     companion object {
