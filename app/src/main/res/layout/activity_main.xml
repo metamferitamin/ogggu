@@ -97,7 +97,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnSaveStart"
-                            style="@style/Widget.Material3.Button.FilledButton"
+                            style="?attr/materialButtonStyle"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -105,7 +105,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnStop"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            style="?attr/materialButtonOutlinedStyle"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="@dimen/spacing_small"

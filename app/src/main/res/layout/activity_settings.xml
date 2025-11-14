@@ -80,7 +80,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnStatusSound"
-                            style="@style/Widget.Material3.Button.TonalButton"
+                            style="?attr/materialButtonOutlinedStyle"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -88,7 +88,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnClearStatusSound"
-                            style="@style/Widget.Material3.Button.TextButton"
+                            style="?attr/materialButtonTextButtonStyle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="@dimen/spacing_small"
@@ -157,7 +157,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnChangeSound"
-                            style="@style/Widget.Material3.Button.TonalButton"
+                            style="?attr/materialButtonOutlinedStyle"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -165,7 +165,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnClearChangeSound"
-                            style="@style/Widget.Material3.Button.TextButton"
+                            style="?attr/materialButtonTextButtonStyle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="@dimen/spacing_small"
@@ -186,7 +186,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSaveSettings"
-                style="@style/Widget.Material3.Button.FilledButton"
+                style="?attr/materialButtonStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_large"
