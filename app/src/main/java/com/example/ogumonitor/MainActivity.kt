@@ -2,12 +2,12 @@ package com.example.ogumonitor
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +16,9 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.textfield.TextInputEditText
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
@@ -35,13 +38,18 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val etAsp: EditText = findViewById(R.id.etAsp)
-        val etObsKul: EditText = findViewById(R.id.etObsKul)
-        val btnSaveStart: Button = findViewById(R.id.btnSaveStart)
-        val btnStop: Button = findViewById(R.id.btnStop)
-        val tvStatus: TextView = findViewById(R.id.tvStatus)
+        val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        NotificationHelper.ensureChannels(this)
+
+        val etAsp: TextInputEditText = findViewById(R.id.etAsp)
+        val etObsKul: TextInputEditText = findViewById(R.id.etObsKul)
+        val btnSaveStart: MaterialButton = findViewById(R.id.btnSaveStart)
+        val btnStop: MaterialButton = findViewById(R.id.btnStop)
+        val tvStatus: androidx.appcompat.widget.AppCompatTextView = findViewById(R.id.tvStatus)
+
+        val prefs = getSharedPreferences(CookieUtils.PREFS_NAME, Context.MODE_PRIVATE)
         etAsp.setText(prefs.getString(CookieUtils.PREF_ASP, ""))
         etObsKul.setText(prefs.getString(CookieUtils.PREF_OBS, ""))
 
@@ -53,8 +61,8 @@ class MainActivity : AppCompatActivity() {
             }
 
         btnSaveStart.setOnClickListener {
-            val aspValue = etAsp.text.toString().trim()
-            val obsValue = etObsKul.text.toString().trim()
+            val aspValue = etAsp.text?.toString()?.trim().orEmpty()
+            val obsValue = etObsKul.text?.toString()?.trim().orEmpty()
 
             if (aspValue.isEmpty() || obsValue.isEmpty()) {
                 Toast.makeText(this, R.string.cookie_empty_message, Toast.LENGTH_SHORT).show()
@@ -66,9 +74,10 @@ class MainActivity : AppCompatActivity() {
             prefs.edit()
                 .putString(CookieUtils.PREF_ASP, aspValue)
                 .putString(CookieUtils.PREF_OBS, obsValue)
-                .putString(PREF_COOKIE, cookieText)
+                .putString(CookieUtils.PREF_COMBINED_COOKIE, cookieText)
                 .apply()
             requestNotificationPermissionIfNeeded()
+            NotificationHelper.ensureChannels(this)
 
             val repeatingRequest = OneTimeWorkRequestBuilder<MonitorWorker>()
                 .setInitialDelay(MonitorWorker.REPEAT_INTERVAL_MINUTES.toLong(), TimeUnit.MINUTES)
@@ -101,6 +110,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     private fun resolveStatus(workInfos: List<WorkInfo>?): String {
         if (workInfos.isNullOrEmpty()) {
             return getString(R.string.status_idle)
@@ -129,10 +153,5 @@ class MainActivity : AppCompatActivity() {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
-    }
-
-    companion object {
-        private const val PREFS_NAME = "ogu_prefs"
-        private const val PREF_COOKIE = "cookie"
     }
 }

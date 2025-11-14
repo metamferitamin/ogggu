@@ -29,9 +29,9 @@ class MonitorWorker(
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = appContext.getSharedPreferences(CookieUtils.PREFS_NAME, Context.MODE_PRIVATE)
         val cookie = inputData.getString(KEY_COOKIE)?.takeIf { it.isNotBlank() }
-            ?: prefs.getString(PREF_COOKIE, null)?.takeIf { it.isNotBlank() }
+            ?: prefs.getString(CookieUtils.PREF_COMBINED_COOKIE, null)?.takeIf { it.isNotBlank() }
             ?: run {
                 val aspValue = prefs.getString(CookieUtils.PREF_ASP, null)?.takeIf { it.isNotBlank() }
                 val obsValue = prefs.getString(CookieUtils.PREF_OBS, null)?.takeIf { it.isNotBlank() }
@@ -46,7 +46,7 @@ class MonitorWorker(
             return@withContext Result.failure()
         }
 
-        ensureNotificationChannels()
+        NotificationHelper.ensureChannels(appContext)
 
         val client = OkHttpClient.Builder()
             .callTimeout(20, TimeUnit.SECONDS)
@@ -76,71 +76,79 @@ class MonitorWorker(
                 return@withContext Result.retry()
             }
 
+            val timestamp = currentTimestamp()
             val lowerBody = body.lowercase(Locale.ROOT)
             if (LOGIN_KEYWORDS.any { lowerBody.contains(it) }) {
+                val message = withTimestamp(
+                    appContext.getString(R.string.notification_session_invalid_base),
+                    timestamp
+                )
                 sendNotification(
-                    channelId = STATUS_CHANNEL_ID,
-                    notificationId = STATUS_NOTIFICATION_ID,
+                    channelId = NotificationHelper.STATUS_CHANNEL_ID,
+                    notificationId = NotificationHelper.STATUS_NOTIFICATION_ID,
                     title = appContext.getString(R.string.app_name),
-                    message = appContext.getString(
-                        R.string.notification_session_invalid,
-                        currentTimestamp()
-                    )
+                    message = message
                 )
                 return@withContext successWithReschedule(cookie)
             }
 
             val fragment = extractFragment(body)
             if (fragment.isEmpty()) {
+                val message = withTimestamp(
+                    appContext.getString(R.string.notification_table_missing_base),
+                    timestamp
+                )
                 sendNotification(
-                    channelId = STATUS_CHANNEL_ID,
-                    notificationId = STATUS_NOTIFICATION_ID,
+                    channelId = NotificationHelper.STATUS_CHANNEL_ID,
+                    notificationId = NotificationHelper.STATUS_NOTIFICATION_ID,
                     title = appContext.getString(R.string.app_name),
-                    message = appContext.getString(
-                        R.string.notification_table_missing,
-                        currentTimestamp()
-                    )
+                    message = message
                 )
                 return@withContext successWithReschedule(cookie)
             }
 
             val newHash = computeHash(fragment)
-            val lastHash = prefs.getString(PREF_LAST_HASH, null)
+            val lastHash = prefs.getString(CookieUtils.PREF_LAST_HASH, null)
 
             if (lastHash == null) {
-                prefs.edit().putString(PREF_LAST_HASH, newHash).apply()
+                prefs.edit().putString(CookieUtils.PREF_LAST_HASH, newHash).apply()
+                val message = withTimestamp(
+                    appContext.getString(R.string.notification_initial_snapshot_base),
+                    timestamp
+                )
                 sendNotification(
-                    channelId = STATUS_CHANNEL_ID,
-                    notificationId = STATUS_NOTIFICATION_ID,
+                    channelId = NotificationHelper.STATUS_CHANNEL_ID,
+                    notificationId = NotificationHelper.STATUS_NOTIFICATION_ID,
                     title = appContext.getString(R.string.app_name),
-                    message = appContext.getString(
-                        R.string.notification_initial_snapshot,
-                        currentTimestamp()
-                    )
+                    message = message
                 )
                 return@withContext successWithReschedule(cookie)
             }
 
             if (newHash != lastHash) {
-                prefs.edit().putString(PREF_LAST_HASH, newHash).apply()
+                prefs.edit().putString(CookieUtils.PREF_LAST_HASH, newHash).apply()
+                val defaultChange = appContext.getString(R.string.default_change_message)
+                val baseMessage = prefs.getString(CookieUtils.PREF_CHANGE_MESSAGE, defaultChange)
+                    ?.takeIf { it.isNotBlank() }
+                    ?: defaultChange
+                val message = withTimestamp(baseMessage, timestamp)
                 sendNotification(
-                    channelId = CHANGE_CHANNEL_ID,
-                    notificationId = CHANGE_NOTIFICATION_ID,
+                    channelId = NotificationHelper.CHANGE_CHANNEL_ID,
+                    notificationId = NotificationHelper.CHANGE_NOTIFICATION_ID,
                     title = appContext.getString(R.string.notification_results_changed_title),
-                    message = appContext.getString(
-                        R.string.notification_results_changed_body,
-                        currentTimestamp()
-                    )
+                    message = message
                 )
             } else {
+                val defaultStatus = appContext.getString(R.string.default_no_change_message)
+                val baseMessage = prefs.getString(CookieUtils.PREF_STATUS_MESSAGE, defaultStatus)
+                    ?.takeIf { it.isNotBlank() }
+                    ?: defaultStatus
+                val message = withTimestamp(baseMessage, timestamp)
                 sendNotification(
-                    channelId = STATUS_CHANNEL_ID,
-                    notificationId = STATUS_NOTIFICATION_ID,
+                    channelId = NotificationHelper.STATUS_CHANNEL_ID,
+                    notificationId = NotificationHelper.STATUS_NOTIFICATION_ID,
                     title = appContext.getString(R.string.app_name),
-                    message = appContext.getString(
-                        R.string.notification_no_change,
-                        currentTimestamp()
-                    )
+                    message = message
                 )
             }
 
@@ -184,32 +192,8 @@ class MonitorWorker(
         return bytes.joinToString("") { byte -> "%02x".format(byte) }
     }
 
-    private fun ensureNotificationChannels() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val statusChannel = android.app.NotificationChannel(
-                STATUS_CHANNEL_ID,
-                appContext.getString(R.string.notification_channel_status_name),
-                android.app.NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = appContext.getString(R.string.notification_channel_status_description)
-            }
-
-            val changeChannel = android.app.NotificationChannel(
-                CHANGE_CHANNEL_ID,
-                appContext.getString(R.string.notification_channel_change_name),
-                android.app.NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = appContext.getString(R.string.notification_channel_change_description)
-            }
-
-            val manager = appContext.getSystemService(android.app.NotificationManager::class.java)
-            manager?.createNotificationChannel(statusChannel)
-            manager?.createNotificationChannel(changeChannel)
-        }
-    }
-
     private fun sendNotification(channelId: String, notificationId: Int, title: String, message: String) {
-        val priority = if (channelId == CHANGE_CHANNEL_ID) {
+        val priority = if (channelId == NotificationHelper.CHANGE_CHANNEL_ID) {
             NotificationCompat.PRIORITY_HIGH
         } else {
             NotificationCompat.PRIORITY_DEFAULT
@@ -239,19 +223,16 @@ class MonitorWorker(
         return formatter.format(Date())
     }
 
+    private fun withTimestamp(base: String, timestamp: String): String {
+        return appContext.getString(R.string.notification_message_with_time, base, timestamp)
+    }
+
     companion object {
         const val WORK_TAG = "ogu-monitor-work"
         const val UNIQUE_PERIODIC_WORK_NAME = "ogumonitor-periodic"
-        private const val STATUS_CHANNEL_ID = "ogu-monitor-status"
-        private const val CHANGE_CHANNEL_ID = "ogu-monitor-change"
         private const val RESULTS_URL = "https://ogubs1.ogu.edu.tr/SinavSonuc.aspx"
         private const val USER_AGENT = "Mozilla/5.0 (Android)"
         private const val KEY_COOKIE = "key_cookie"
-        private const val PREFS_NAME = "ogu_prefs"
-        private const val PREF_COOKIE = "cookie"
-        private const val PREF_LAST_HASH = "last_hash"
-        private const val STATUS_NOTIFICATION_ID = 101
-        private const val CHANGE_NOTIFICATION_ID = 201
         private val LOGIN_KEYWORDS = listOf("giriş", "oturum", "login")
         const val REPEAT_INTERVAL_MINUTES = 1
 

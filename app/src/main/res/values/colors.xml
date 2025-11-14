@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="md_theme_primary">#006399</color>
+    <color name="md_theme_primary">#2962FF</color>
     <color name="md_theme_onPrimary">#FFFFFF</color>
-    <color name="md_theme_background">#FFFFFF</color>
-    <color name="md_theme_onBackground">#1B1B1B</color>
-    <color name="ic_launcher_background">#006399</color>
+    <color name="background_surface">#F5F7FB</color>
+    <color name="card_surface">#FFFFFFFF</color>
+    <color name="toolbar_color">#F0F4FF</color>
+    <color name="text_primary">#1B1C1F</color>
+    <color name="text_secondary">#5F6368</color>
+    <color name="text_hint">#8A8D92</color>
+    <color name="icon_tint">#1B1C1F</color>
+    <color name="ic_launcher_background">#2962FF</color>
 </resources>

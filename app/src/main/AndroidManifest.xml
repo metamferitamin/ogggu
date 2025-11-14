@@ -15,6 +15,17 @@
         tools:targetApi="34">
 
         <activity
+            android:name="com.example.ogumonitor.SettingsActivity"
+            android:exported="false"
+            android:label="@string/title_settings"
+            android:parentActivityName="com.example.ogumonitor.MainActivity"
+            android:theme="@style/Theme.OGUMonitor">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.ogumonitor.MainActivity" />
+        </activity>
+
+        <activity
             android:name="com.example.ogumonitor.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
