@@ -31,8 +31,7 @@
     <string name="hint_change_message">Örn. Sonuçlar açıklandı! Hemen kontrol et.</string>
     <string name="default_no_change_message">Henüz değişiklik yok.</string>
     <string name="default_change_message">Sonuçlar açıklandı. Kontrol et.</string>
-    <string name="notification_message_with_time">%1$s
-Son kontrol: %2$s</string>
+    <string name="notification_message_with_time">%1$s\nSon kontrol: %2$s</string>
     <string name="notification_session_invalid_base">Oturum geçersiz. Yeni cookie gir.</string>
     <string name="notification_table_missing_base">Sınav tablosu bulunamadı.</string>
     <string name="notification_initial_snapshot_base">İlk kayıt alındı.</string>
