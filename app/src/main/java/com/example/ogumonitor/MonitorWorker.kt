@@ -46,7 +46,7 @@ class MonitorWorker(
             return@withContext Result.failure()
         }
 
-        ensureNotificationChannel()
+        ensureNotificationChannels()
 
         val client = OkHttpClient.Builder()
             .callTimeout(20, TimeUnit.SECONDS)
@@ -79,6 +79,8 @@ class MonitorWorker(
             val lowerBody = body.lowercase(Locale.ROOT)
             if (LOGIN_KEYWORDS.any { lowerBody.contains(it) }) {
                 sendNotification(
+                    channelId = STATUS_CHANNEL_ID,
+                    notificationId = STATUS_NOTIFICATION_ID,
                     title = appContext.getString(R.string.app_name),
                     message = appContext.getString(
                         R.string.notification_session_invalid,
@@ -91,6 +93,8 @@ class MonitorWorker(
             val fragment = extractFragment(body)
             if (fragment.isEmpty()) {
                 sendNotification(
+                    channelId = STATUS_CHANNEL_ID,
+                    notificationId = STATUS_NOTIFICATION_ID,
                     title = appContext.getString(R.string.app_name),
                     message = appContext.getString(
                         R.string.notification_table_missing,
@@ -106,6 +110,8 @@ class MonitorWorker(
             if (lastHash == null) {
                 prefs.edit().putString(PREF_LAST_HASH, newHash).apply()
                 sendNotification(
+                    channelId = STATUS_CHANNEL_ID,
+                    notificationId = STATUS_NOTIFICATION_ID,
                     title = appContext.getString(R.string.app_name),
                     message = appContext.getString(
                         R.string.notification_initial_snapshot,
@@ -118,6 +124,8 @@ class MonitorWorker(
             if (newHash != lastHash) {
                 prefs.edit().putString(PREF_LAST_HASH, newHash).apply()
                 sendNotification(
+                    channelId = CHANGE_CHANNEL_ID,
+                    notificationId = CHANGE_NOTIFICATION_ID,
                     title = appContext.getString(R.string.notification_results_changed_title),
                     message = appContext.getString(
                         R.string.notification_results_changed_body,
@@ -126,6 +134,8 @@ class MonitorWorker(
                 )
             } else {
                 sendNotification(
+                    channelId = STATUS_CHANNEL_ID,
+                    notificationId = STATUS_NOTIFICATION_ID,
                     title = appContext.getString(R.string.app_name),
                     message = appContext.getString(
                         R.string.notification_no_change,
@@ -174,27 +184,43 @@ class MonitorWorker(
         return bytes.joinToString("") { byte -> "%02x".format(byte) }
     }
 
-    private fun ensureNotificationChannel() {
+    private fun ensureNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = android.app.NotificationChannel(
-                CHANNEL_ID,
-                "OGU Monitor",
+            val statusChannel = android.app.NotificationChannel(
+                STATUS_CHANNEL_ID,
+                appContext.getString(R.string.notification_channel_status_name),
+                android.app.NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = appContext.getString(R.string.notification_channel_status_description)
+            }
+
+            val changeChannel = android.app.NotificationChannel(
+                CHANGE_CHANNEL_ID,
+                appContext.getString(R.string.notification_channel_change_name),
                 android.app.NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Sınav sonucu bildirimleri"
+                description = appContext.getString(R.string.notification_channel_change_description)
             }
+
             val manager = appContext.getSystemService(android.app.NotificationManager::class.java)
-            manager?.createNotificationChannel(channel)
+            manager?.createNotificationChannel(statusChannel)
+            manager?.createNotificationChannel(changeChannel)
         }
     }
 
-    private fun sendNotification(title: String, message: String) {
-        val builder = NotificationCompat.Builder(appContext, CHANNEL_ID)
+    private fun sendNotification(channelId: String, notificationId: Int, title: String, message: String) {
+        val priority = if (channelId == CHANGE_CHANNEL_ID) {
+            NotificationCompat.PRIORITY_HIGH
+        } else {
+            NotificationCompat.PRIORITY_DEFAULT
+        }
+
+        val builder = NotificationCompat.Builder(appContext, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(priority)
             .setAutoCancel(true)
 
         val manager = NotificationManagerCompat.from(appContext)
@@ -204,7 +230,7 @@ class MonitorWorker(
         ) == PackageManager.PERMISSION_GRANTED
 
         if (hasPermission || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            manager.notify(NOTIFICATION_ID, builder.build())
+            manager.notify(notificationId, builder.build())
         }
     }
 
@@ -216,14 +242,16 @@ class MonitorWorker(
     companion object {
         const val WORK_TAG = "ogu-monitor-work"
         const val UNIQUE_PERIODIC_WORK_NAME = "ogumonitor-periodic"
-        private const val CHANNEL_ID = "ogu-monitor"
+        private const val STATUS_CHANNEL_ID = "ogu-monitor-status"
+        private const val CHANGE_CHANNEL_ID = "ogu-monitor-change"
         private const val RESULTS_URL = "https://ogubs1.ogu.edu.tr/SinavSonuc.aspx"
         private const val USER_AGENT = "Mozilla/5.0 (Android)"
         private const val KEY_COOKIE = "key_cookie"
         private const val PREFS_NAME = "ogu_prefs"
         private const val PREF_COOKIE = "cookie"
         private const val PREF_LAST_HASH = "last_hash"
-        private const val NOTIFICATION_ID = 101
+        private const val STATUS_NOTIFICATION_ID = 101
+        private const val CHANGE_NOTIFICATION_ID = 201
         private val LOGIN_KEYWORDS = listOf("giriş", "oturum", "login")
         const val REPEAT_INTERVAL_MINUTES = 1
 

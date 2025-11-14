@@ -20,4 +20,8 @@
     <string name="notification_no_change">Değişiklik yok. Son kontrol: %1$s</string>
     <string name="notification_results_changed_title">OGU: Sınav Sonuçları Değişti</string>
     <string name="notification_results_changed_body">Sonuçlar değişmiş. Kontrol et. Son kontrol: %1$s</string>
+    <string name="notification_channel_status_name">Durum bildirimleri</string>
+    <string name="notification_channel_status_description">Sonuçlar değişmediğinde veya kontrol sırasında oluşan durum mesajları.</string>
+    <string name="notification_channel_change_name">Sonuç değişiklikleri</string>
+    <string name="notification_channel_change_description">Sınav sonuçları değiştiğinde gönderilen uyarılar.</string>
 </resources>
