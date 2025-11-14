@@ -97,7 +97,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnSaveStart"
-                            style="?attr/materialButtonStyle"
+                            style="@style/Widget.OGUMonitor.Button.Filled"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -105,7 +105,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnStop"
-                            style="?attr/materialButtonOutlinedStyle"
+                            style="@style/Widget.OGUMonitor.Button.Outlined"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="@dimen/spacing_small"
